@@ -1,8 +1,9 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
-//logger
+//logger, error handler
 const { logger } = require("./middlewares/logEvents");
+const errorHandler = require("./middlewares/errorHandler");
 //cors
 const cors = require("cors");
 const corsOptions = require("./config/corsOptions");
@@ -30,6 +31,9 @@ app.use(cookieParser());
 app.all("*", (req, res) => {
   res.status(404).type("txt").send("404 not found");
 });
+
+//error handler
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server started on port: ${PORT}`);
