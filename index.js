@@ -14,6 +14,8 @@ const mongoose = require("mongoose");
 const dbConnect = require("./config/dbConnect");
 //port
 const PORT = process.env.PORT || 5000;
+//verify access token mw
+const verifyAccessToken = require("./middlewares/verifyAccessToken");
 
 //Connect to mongodb
 dbConnect();
@@ -33,6 +35,7 @@ app.use(cookieParser());
 //auth
 app.use("/api/auth", require("./routes/auth"));
 //else
+app.use(verifyAccessToken);
 //catch all
 app.all("*", (req, res) => {
   res.status(404).type("txt").send("404 not found");
