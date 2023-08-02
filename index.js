@@ -1,6 +1,8 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
+//logger
+const { logger } = require("./middlewares/logEvents");
 //cors
 const cors = require("cors");
 const corsOptions = require("./config/corsOptions");
@@ -9,6 +11,8 @@ const cookieParser = require("cookie-parser");
 //port
 const PORT = process.env.PORT || 5000;
 
+//requests logger
+app.use(logger);
 //Cross Origin Resource Sharing
 app.use(cors(corsOptions));
 // built-in middleware to handle urlencoded form data
