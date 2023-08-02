@@ -9,8 +9,14 @@ const cors = require("cors");
 const corsOptions = require("./config/corsOptions");
 //cookieparser
 const cookieParser = require("cookie-parser");
+//db connection
+const mongoose = require("mongoose");
+const dbConnect = require("./config/dbConnect");
 //port
 const PORT = process.env.PORT || 5000;
+
+//Connect to mongodb
+dbConnect();
 
 //requests logger
 app.use(logger);
@@ -35,6 +41,10 @@ app.all("*", (req, res) => {
 //error handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server started on port: ${PORT}`);
+//only listen if can connect to mongodb
+mongoose.connection.once("connected", () => {
+  console.log("Connected to MongoDB.");
+  app.listen(PORT, () => {
+    console.log(`Server started on port: ${PORT}`);
+  });
 });
