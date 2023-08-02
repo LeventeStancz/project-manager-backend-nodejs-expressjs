@@ -31,7 +31,7 @@ app.use(cookieParser());
 
 //routes
 //auth
-//app.use("/api/auth", require("./routes/auth"));
+app.use("/api/auth", require("./routes/auth"));
 //else
 //catch all
 app.all("*", (req, res) => {
