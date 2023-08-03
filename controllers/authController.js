@@ -18,22 +18,22 @@ const registerUser = async (req, res) => {
 
   try {
     //check for duplicate username in the database
-    const foundDuplicateUsername = await User.find({
+    const foundDuplicateUsername = await User.findOne({
       username: username,
     }).exec();
 
     //if duplicate
-    if (foundDuplicateUsername?.length > 0)
+    if (foundDuplicateUsername)
       return res.status(409).json({
         clientMsg: "This username is already in use.",
         error: "There was a duplicate for username at registration.",
       }); // Conflict
 
     //check for duplicate email in the database
-    const foundDuplicateEmail = await User.find({ email: email }).exec();
+    const foundDuplicateEmail = await User.findOne({ email: email }).exec();
 
     //if duplicate
-    if (foundDuplicateEmail?.length > 0)
+    if (foundDuplicateEmail)
       return res.status(409).json({
         clientMsg: "This email is already in use.",
         error: "There was a duplicate for email at registration.",
