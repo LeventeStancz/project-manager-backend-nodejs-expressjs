@@ -70,69 +70,76 @@ const loginUser = async (req, res) => {
     });
   }
 
-  //check user in the database
-  const dbUser = await User.findOne({ username: username }).exec();
+  try {
+    //check user in the database
+    const dbUser = await User.findOne({ username: username }).exec();
 
-  if (!dbUser) {
-    return res.status(401).json({
-      clientMsg: "There is no user with the given credentials.",
-      error: "No user was found with the given credentials at login.",
+    if (!dbUser) {
+      return res.status(401).json({
+        clientMsg: "There is no user with the given credentials.",
+        error: "No user was found with the given credentials at login.",
+      });
+    }
+
+    const match = await bcrypt.compare(password, dbUser.password);
+    if (!match) {
+      return res.status(401).json({
+        clientMsg: "Password does not match.",
+        error: "Users password didn't match at login.",
+      }); //unauthorized - wrong password
+    }
+
+    //check if profile is inactive
+    if (dbUser.isActive === false) {
+      return res.status(401).json({
+        clientMsg: "This profile is inactive.",
+        error: "Users profile is inactive at login.",
+      }); //unauthorized - inactive
+    }
+
+    //create accessToken, refreshToken
+    const accessToken = jwt.sign(
+      {
+        userid: dbUser._id,
+      },
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: "10m",
+      }
+    );
+    const refreshToken = jwt.sign(
+      {
+        userid: dbUser._id,
+      },
+      process.env.REFRESH_TOKEN_SECRET,
+      {
+        expiresIn: "5d",
+      }
+    );
+
+    //set refresh token in httponly cookie
+    //maxAge: 5 day
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 5 * 24 * 60 * 60 * 1000,
+    });
+
+    //send back data and access token
+    return res.status(200).json({
+      //userid only for dev
+      userid: dbUser._id,
+      accessToken: accessToken,
+      clientMsg: "Successfully logged in!",
+      error: "",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
     });
   }
-
-  const match = await bcrypt.compare(password, dbUser.password);
-  if (!match) {
-    return res.status(401).json({
-      clientMsg: "Password does not match.",
-      error: "Users password didn't match at login.",
-    }); //unauthorized - wrong password
-  }
-
-  //check if profile is inactive
-  if (dbUser.isActive === false) {
-    return res.status(401).json({
-      clientMsg: "This profile is inactive.",
-      error: "Users profile is inactive at login.",
-    }); //unauthorized - inactive
-  }
-
-  //create accessToken, refreshToken
-  const accessToken = jwt.sign(
-    {
-      userid: dbUser._id,
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-      expiresIn: "10m",
-    }
-  );
-  const refreshToken = jwt.sign(
-    {
-      userid: dbUser._id,
-    },
-    process.env.REFRESH_TOKEN_SECRET,
-    {
-      expiresIn: "5d",
-    }
-  );
-
-  //set refresh token in httponly cookie
-  //maxAge: 5 day
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    sameSite: "None",
-    secure: true,
-    maxAge: 5 * 24 * 60 * 60 * 1000,
-  });
-
-  //send back data and access token
-  return res.status(200).json({
-    //userid only for dev
-    userid: dbUser._id,
-    accessToken: accessToken,
-    clientMsg: "Successfully logged in!",
-    error: "",
-  });
 };
 
 const handleRefreshToken = (req, res) => {
