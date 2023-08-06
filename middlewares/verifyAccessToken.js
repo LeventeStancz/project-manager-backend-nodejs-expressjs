@@ -18,6 +18,7 @@ const verifyAccessToken = (req, res, next) => {
         error: "Invalid access token.",
       });
     }
+    req.user = decodedData.userid;
     next();
   });
 };
