@@ -36,6 +36,7 @@ app.use(cookieParser());
 app.use("/api/auth", require("./routes/auth"));
 //else
 app.use(verifyAccessToken);
+app.use("/api/projects", require("./routes/projects"));
 //catch all
 app.all("*", (req, res) => {
   res.status(404).type("txt").send("404 not found");
