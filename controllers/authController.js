@@ -76,8 +76,8 @@ const loginUser = async (req, res) => {
 
     if (!dbUser) {
       return res.status(401).json({
-        clientMsg: "There is no user with the given credentials.",
-        error: "No user was found with the given credentials at login.",
+        clientMsg: "There is no user with the given username.",
+        error: "No user was found with the given username at login.",
       });
     }
 
