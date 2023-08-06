@@ -46,6 +46,7 @@ const getProjectsForUser = async (req, res) => {
       }).exec();
 
       // Add the project details along with member and task counts to the result
+
       result.push({
         _id: project._id,
         name: project.name,
@@ -68,6 +69,60 @@ const getProjectsForUser = async (req, res) => {
   }
 };
 
+const createProject = async (req, res) => {
+  const { name, shortDescription, description, finished } = req.body;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(req.user) ||
+    typeof name === "undefined" ||
+    typeof shortDescription === "undefined" ||
+    typeof description === "undefined"
+  ) {
+    return res.status(400).json({
+      clientMsg: "Not enough information provided.",
+      error:
+        "Not enough credentials in the request body when creating project.",
+    });
+  }
+
+  try {
+    //check for duplicate name in the database
+    const foundDuplicate = await Project.findOne({ name: name }).exec();
+
+    //if duplicate
+    if (foundDuplicate)
+      return res.status(409).json({
+        clientMsg: "This project name is already in use.",
+        error: "There was a duplicate for name when creating a project.",
+      }); // Conflict
+
+    const userProject = {
+      owner: req.user,
+      name,
+      shortDescription,
+      description,
+      finished,
+    };
+
+    //remove finished if it is not given by the user
+    if (typeof userProject[finished] === "undefined") {
+      delete userProject[finished];
+    }
+
+    await Project.create(userProject);
+
+    return res
+      .status(201)
+      .json({ clientMsg: "Successfully created project!", error: "" });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getProjectsForUser,
+  createProject,
 };
