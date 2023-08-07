@@ -46,11 +46,11 @@ const getProjectsForUser = async (req, res) => {
       }).exec();
 
       // Add the project details along with member and task counts to the result
-
+      console.log(project.owner, req.user);
       result.push({
         _id: project._id,
         name: project.name,
-        isOwner: project.owner === req.user,
+        isOwner: project.owner.toString() === req.user,
         shortDescription: project.shortDescription,
         isActive: project.isActive,
         finished: format(new Date(project.finished), "yyyy.MM.dd"),
