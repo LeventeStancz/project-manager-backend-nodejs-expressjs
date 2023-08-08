@@ -122,7 +122,35 @@ const createProject = async (req, res) => {
   }
 };
 
+const getRecentProjectName = async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.user)) {
+    return res.status(400).json({
+      clientMsg: "No information about the projects",
+      error:
+        "No userid in the request body when trying to get projects for user.",
+    });
+  }
+
+  try {
+    const project = await Project.findOne({}, { _id: -1, name: 1 })
+      .sort({ recentlyViewed: -1 })
+      .limit(1)
+      .lean()
+      .exec();
+
+    return res
+      .status(200)
+      .json({ projectName: project.name, clientMsg: "", error: "" });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getProjectsForUser,
   createProject,
+  getRecentProjectName,
 };
