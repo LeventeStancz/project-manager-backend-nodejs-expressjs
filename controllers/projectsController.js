@@ -46,7 +46,6 @@ const getProjectsForUser = async (req, res) => {
       }).exec();
 
       // Add the project details along with member and task counts to the result
-      console.log(project.owner, req.user);
       result.push({
         _id: project._id,
         name: project.name,
