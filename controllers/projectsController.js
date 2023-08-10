@@ -87,7 +87,9 @@ const createProject = async (req, res) => {
 
   try {
     //check for duplicate name in the database
-    const foundDuplicate = await Project.findOne({ name: name }).exec();
+    const foundDuplicate = await Project.findOne({
+      name: name.replace(/\s+/g, "-"),
+    }).exec();
 
     //if duplicate
     if (foundDuplicate)
@@ -98,7 +100,7 @@ const createProject = async (req, res) => {
 
     const userProject = {
       owner: req.user,
-      name,
+      name: name.replace(/\s+/g, "-"),
       shortDescription,
       description,
       finished,
