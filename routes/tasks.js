@@ -7,7 +7,7 @@ router.get("/:projectname", tasksController.getTasksInProject);
 router.post("/create/:projectname", tasksController.createTask);
 
 router.patch(
-  "update/status/:projectname/:taskid",
+  "/update/status/:projectname/:taskid",
   tasksController.updateStatus
 );
 
