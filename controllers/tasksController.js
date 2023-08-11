@@ -205,8 +205,8 @@ const getTasksInProject = async (req, res) => {
     const tasks = result.map((task) => {
       return {
         ...task._doc,
-        deadline: format(new Date(task.deadline), "yyyy.MM.dd"),
-        createdAt: format(new Date(task.createdAt), "yyyy.MM.dd"),
+        deadline: format(new Date(task.deadline), "yyyy/MM/dd"),
+        createdAt: format(new Date(task.createdAt), "yyyy/MM/dd"),
       };
     });
 

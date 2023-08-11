@@ -53,7 +53,7 @@ const getProjectsForUser = async (req, res) => {
         isOwner: project.owner.toString() === req.user,
         shortDescription: project.shortDescription,
         isActive: project.isActive,
-        finished: format(new Date(project.finished), "yyyy.MM.dd"),
+        finished: format(new Date(project.finished), "yyyy/MM/dd"),
         memberCount: memberCount + 1, //+1 for the owner
         taskCount: taskCount,
         recentlyViewed: project.recentlyViewed,
@@ -235,7 +235,7 @@ const getProjectDataByName = async (req, res) => {
       isOwner: projectData.owner.toString() === res.user,
       shortDescription: projectData.shortDescription,
       description: projectData.description,
-      finished: format(new Date(projectData.finished), "yyyy.MM.dd"),
+      finished: format(new Date(projectData.finished), "yyyy/MM/dd"),
     };
 
     return res.status(200).json({ project: result, clientMsg: "", error: "" });
