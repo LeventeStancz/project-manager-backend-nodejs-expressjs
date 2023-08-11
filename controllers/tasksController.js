@@ -167,10 +167,15 @@ const getTasksInProject = async (req, res) => {
         _id: projectId,
       }).exec();
 
-      if (!isOwner) {
+      const isMember = await ProjectMember.findOne({
+        user: req.user,
+        project: projectId,
+      }).exec();
+
+      if (!isOwner && !isMember) {
         return res.status(401).json({
-          clientMsg: "You can't get the tasks of this project.",
-          error: "User is not the owner of the project.",
+          clientMsg: "You don't have access to this project.",
+          error: "User is not the owner nor a member of the project.",
         });
       }
 
@@ -192,7 +197,10 @@ const getTasksInProject = async (req, res) => {
       }
     }
 
-    const result = await Task.find({ project: projectId });
+    const result = await Task.find({
+      project: projectId,
+      assignedTo: req.user,
+    });
 
     const tasks = result.map((task) => {
       return {
@@ -202,7 +210,23 @@ const getTasksInProject = async (req, res) => {
       };
     });
 
-    return res.status(200).json({ tasks, clientMsg: "", error: "" });
+    const todos = tasks.filter((task) => {
+      return task.status === "todo";
+    });
+    const inprogs = tasks.filter((task) => {
+      return task.status === "inprogress";
+    });
+    const dones = tasks.filter((task) => {
+      return task.status === "done";
+    });
+
+    return res.status(200).json({
+      todos,
+      inprogs,
+      dones,
+      clientMsg: "",
+      error: "",
+    });
   } catch (error) {
     return res.status(500).json({
       clientMsg: "Something went wrong. Try again later!",
