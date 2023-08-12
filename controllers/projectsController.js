@@ -181,22 +181,19 @@ const getProjectDataByName = async (req, res) => {
         user: req.user,
         project: projectId,
       }).exec();
-      if (!isProjectMember) {
-        return res.status(401).json({
-          clientMsg: "You don't have access to this project.",
-          error: "User is not a member of the project.",
-        });
-      }
 
-      const isOwner = await Project.findOne({
-        owner: req.user,
-        _id: projectId,
-      }).exec();
-      if (!isOwner) {
-        return res.status(401).json({
-          clientMsg: "You don't have access to this project.",
-          error: "User is not the owner of the project.",
-        });
+      if (!isProjectMember) {
+        //if not member check if owner
+        const isOwner = await Project.findOne({
+          owner: req.user,
+          _id: projectId,
+        }).exec();
+        if (!isOwner) {
+          return res.status(401).json({
+            clientMsg: "You don't have access to this project.",
+            error: "User is not the owner of the project.",
+          });
+        }
       }
 
       //check if project is inactive
@@ -210,7 +207,7 @@ const getProjectDataByName = async (req, res) => {
         }
       ).exec();
 
-      //!check if project is inactive
+      //check if project is inactive
       if (!isActive) {
         return res.status(401).json({
           clientMsg: "This project is inactive.",
