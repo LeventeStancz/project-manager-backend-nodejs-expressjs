@@ -160,7 +160,7 @@ const addMember = async (req, res) => {
     }
 
     //check if admin is trying to add himself
-    if (req.user.toString() === curOwner.toString()) {
+    if (req.user.toString() === memberid.toString()) {
       return res.status(401).json({
         clientMsg: "You can't add yourself to this project.",
         error: "User is an admin, can't be a member.",
