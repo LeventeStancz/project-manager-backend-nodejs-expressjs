@@ -1,9 +1,7 @@
 const mongoose = require("mongoose");
-const { format } = require("date-fns");
 
 const Project = require("../models/Project");
 const ProjectMember = require("../models/ProjectMember");
-const Task = require("../models/Task");
 const User = require("../models/User");
 
 const getMembersInProject = async (req, res) => {
@@ -102,6 +100,95 @@ const getMembersInProject = async (req, res) => {
   }
 };
 
+const addMember = async (req, res) => {
+  const { projectname } = req.params;
+  const { memberid } = req.body;
+
+  if (
+    typeof projectname === "undefined" ||
+    !mongoose.Types.ObjectId.isValid(req.user) ||
+    !mongoose.Types.ObjectId.isValid(memberid)
+  ) {
+    return res.status(400).json({
+      clientMsg: "Not enough information.",
+      error:
+        "No projectid/userid/memberid in the request body when trying to add member to project.",
+    });
+  }
+
+  try {
+    const { isAdmin } = await User.findOne(
+      { _id: req.user },
+      { isAdmin: 1, _id: 0 }
+    ).exec();
+
+    //get the project id for easier searches
+    const { _id: projectId } = await Project.findOne({
+      name: projectname,
+    }).exec();
+
+    //check if owner if not an admin
+    if (!isAdmin) {
+      const { owner: curOwner, isActive } = await Project.findOne(
+        { _id: projectId },
+        { owner: 1, isActive: 1, _id: 0 }
+      ).exec();
+
+      if (req.user.toString() !== curOwner.toString()) {
+        return res.status(401).json({
+          clientMsg: "You don't have authority to add member to this project.",
+          error: "User is not the owner of the project.",
+        });
+      }
+
+      //check if owner trying to add himself
+      if (memberid.toString() === curOwner.toString()) {
+        return res.status(401).json({
+          clientMsg: "You can't add yourself as a member to this project.",
+          error: "User is the owner of the project.(can't be a member)",
+        });
+      }
+
+      //check if project is inactive
+      if (!isActive) {
+        return res.status(401).json({
+          clientMsg: "This project is inactive.",
+          error: "The project the user is trying to add member to is inactive.",
+        });
+      }
+    }
+
+    //check if user is already a member
+    const member = await ProjectMember.findOne({
+      project: projectId,
+      user: memberid,
+    });
+
+    if (member) {
+      return res.status(401).json({
+        clientMsg: "This user is already a member of this project.",
+        error: "The user getting added is already a member of this project.",
+      });
+    }
+
+    await ProjectMember.create({
+      project: projectId,
+      user: memberid,
+    });
+
+    return res.status(200).json({
+      clientMsg: "Successfully added member to project!",
+      error: "",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getMembersInProject,
+  addMember,
 };
