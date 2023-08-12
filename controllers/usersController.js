@@ -24,7 +24,9 @@ const searchInUsers = async (req, res) => {
       users = await User.find(
         { username: { $regex: `${search}` } },
         { _id: 1, username: 1 }
-      ).sort({ username: 1 });
+      )
+        .sort({ username: 1 })
+        .limit(10);
     } else {
       users = await User.find(
         {
@@ -34,7 +36,9 @@ const searchInUsers = async (req, res) => {
           ],
         },
         { _id: 1, username: 1, email: 1 }
-      ).sort({ username: 1 });
+      )
+        .sort({ username: 1 })
+        .limit(10);
     }
 
     return res.status(200).json({ users: users, clientMsg: "", error: "" });
