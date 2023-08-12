@@ -127,13 +127,14 @@ const addMember = async (req, res) => {
       name: projectname,
     }).exec();
 
-    //check if owner if not an admin
-    if (!isAdmin) {
-      const { owner: curOwner, isActive } = await Project.findOne(
-        { _id: projectId },
-        { owner: 1, isActive: 1, _id: 0 }
-      ).exec();
+    //get neccesary information
+    const { owner: curOwner, isActive } = await Project.findOne(
+      { _id: projectId },
+      { owner: 1, isActive: 1, _id: 0 }
+    ).exec();
 
+    if (!isAdmin) {
+      //check if owner if not an admin
       if (req.user.toString() !== curOwner.toString()) {
         return res.status(401).json({
           clientMsg: "You don't have authority to add member to this project.",
@@ -156,6 +157,14 @@ const addMember = async (req, res) => {
           error: "The project the user is trying to add member to is inactive.",
         });
       }
+    }
+
+    //check if admin is trying to add himself
+    if (req.user.toString() === curOwner.toString()) {
+      return res.status(401).json({
+        clientMsg: "You can't add yourself to this project.",
+        error: "User is an admin, can't be a member.",
+      });
     }
 
     //check if user is already a member
