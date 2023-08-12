@@ -46,6 +46,26 @@ const searchInUsers = async (req, res) => {
   }
 };
 
+const getUserData = async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.user)) {
+    return res.status(400).json({
+      clientMsg: "No information about the user.",
+      error: "No userid in the request body when trying get data about user.",
+    });
+  }
+
+  try {
+    const user = await User.findOne({ _id: req.user }).lean().exec();
+    return res.status(200).json({ user, clientMsg: "", error: "" });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   searchInUsers,
+  getUserData,
 };
