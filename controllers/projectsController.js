@@ -246,9 +246,73 @@ const getProjectDataByName = async (req, res) => {
   }
 };
 
+const updateProject = async (req, res) => {
+  const { projectname } = req.params;
+  if (
+    typeof projectname === "undefined" ||
+    !mongoose.Types.ObjectId.isValid(req.user)
+  ) {
+    return res.status(400).json({
+      clientMsg: "No information about the project",
+      error:
+        "No projectname/userid in the request body when trying to update project.",
+    });
+  }
+
+  const { name, shortDescription, description, finished } = req.body;
+
+  if (
+    typeof name === "undefined" ||
+    typeof shortDescription === "undefined" ||
+    typeof description === "undefined"
+  ) {
+    return res.status(400).json({
+      clientMsg: "Not enough information provided.",
+      error:
+        "Not enough credentials in the request body when updating project.",
+    });
+  }
+
+  try {
+    //check for duplicate name in the database
+    const foundDuplicate = await Project.find({ name: name }).exec();
+
+    //if duplicate
+    if (foundDuplicate?.length > 1)
+      return res.status(409).json({
+        clientMsg: "This project name is already in use by another project.",
+        error: "There was a duplicate for name when updating a project.",
+      }); // Conflict
+
+    const userProject = {
+      name,
+      shortDescription,
+      description,
+      finished,
+    };
+
+    //remove finished if it is not given by the user
+    if (typeof userProject[finished] === "undefined") {
+      delete userProject[finished];
+    }
+
+    await Project.updateOne({ name: projectname }, userProject);
+
+    return res
+      .status(201)
+      .json({ clientMsg: "Successfully updated project!", error: "" });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getProjectsForUser,
   createProject,
   getRecentProjectName,
   getProjectDataByName,
+  updateProject,
 };
