@@ -7,6 +7,10 @@ router.get("/", projectsController.getProjectsForUser);
 router.post("/create", projectsController.createProject);
 router.get("/recent", projectsController.getRecentProjectName);
 router.get("/:projectname", projectsController.getProjectDataByName);
+router.get(
+  "/detailed/:projectname",
+  projectsController.getProjectDetailedDataByName
+);
 router.put("/update/:projectname", projectsController.updateProject);
 
 module.exports = router;
