@@ -315,15 +315,19 @@ const getProjectDetailedDataByName = async (req, res) => {
     //find and update recenltyViewed field
     const projectData = await Project.findOne({
       _id: projectId,
-    }).exec();
+    })
+      .populate("owner", "_id username")
+      .lean()
+      .exec();
 
     const result = {
       _id: projectData._id,
       name: projectData.name,
-      isOwner: projectData.owner.toString() === res.user,
+      owner: projectData.owner,
       shortDescription: projectData.shortDescription,
       description: projectData.description,
-      finished: format(new Date(projectData.finished), "yyyy.MM.dd"),
+      finished: format(new Date(projectData.finished), "yyyy-MM-dd"),
+      createdAt: format(new Date(projectData.createdAt), "yyyy-MM-dd"),
     };
 
     return res.status(200).json({ project: result, clientMsg: "", error: "" });
