@@ -316,7 +316,7 @@ const getProjectDetailedDataByName = async (req, res) => {
     const projectData = await Project.findOne({
       _id: projectId,
     })
-      .populate("owner", "_id username")
+      .populate("owner", "_id username email")
       .lean()
       .exec();
 
