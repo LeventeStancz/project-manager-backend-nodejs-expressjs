@@ -37,6 +37,10 @@ app.use("/api/auth", require("./routes/auth"));
 //else
 app.use(verifyAccessToken);
 app.use("/api/projects", require("./routes/projects"));
+app.use("/api/members", require("./routes/members"));
+app.use("/api/users", require("./routes/users"));
+app.use("/api/tasks", require("./routes/tasks"));
+app.use("/api/admin", require("./routes/admin"));
 //catch all
 app.all("*", (req, res) => {
   res.status(404).type("txt").send("404 not found");

@@ -47,14 +47,13 @@ const getProjectsForUser = async (req, res) => {
       }).exec();
 
       // Add the project details along with member and task counts to the result
-
       result.push({
         _id: project._id,
         name: project.name,
-        isOwner: project.owner === req.user,
+        isOwner: project.owner.toString() === req.user,
         shortDescription: project.shortDescription,
         isActive: project.isActive,
-        finished: format(new Date(project.finished), "yyyy.MM.dd"),
+        finished: format(new Date(project.finished), "yyyy-MM-dd"),
         memberCount: memberCount + 1, //+1 for the owner
         taskCount: taskCount,
         recentlyViewed: project.recentlyViewed,
@@ -88,7 +87,9 @@ const createProject = async (req, res) => {
 
   try {
     //check for duplicate name in the database
-    const foundDuplicate = await Project.findOne({ name: name }).exec();
+    const foundDuplicate = await Project.findOne({
+      name: name.replace(/\s+/g, "-"),
+    }).exec();
 
     //if duplicate
     if (foundDuplicate)
@@ -99,7 +100,7 @@ const createProject = async (req, res) => {
 
     const userProject = {
       owner: req.user,
-      name,
+      name: name.replace(/\s+/g, "-"),
       shortDescription,
       description,
       finished,
@@ -180,22 +181,19 @@ const getProjectDataByName = async (req, res) => {
         user: req.user,
         project: projectId,
       }).exec();
-      if (!isProjectMember) {
-        return res.status(401).json({
-          clientMsg: "You don't have access to this project.",
-          error: "User is not a member of the project.",
-        });
-      }
 
-      const isOwner = await Project.findOne({
-        owner: req.user,
-        _id: projectId,
-      }).exec();
-      if (!isOwner) {
-        return res.status(401).json({
-          clientMsg: "You don't have access to this project.",
-          error: "User is not the owner of the project.",
-        });
+      if (!isProjectMember) {
+        //if not member check if owner
+        const isOwner = await Project.findOne({
+          owner: req.user,
+          _id: projectId,
+        }).exec();
+        if (!isOwner) {
+          return res.status(401).json({
+            clientMsg: "You don't have access to this project.",
+            error: "User is not the owner of the project.",
+          });
+        }
       }
 
       //check if project is inactive
@@ -209,7 +207,7 @@ const getProjectDataByName = async (req, res) => {
         }
       ).exec();
 
-      //!check if project is inactive
+      //check if project is inactive
       if (!isActive) {
         return res.status(401).json({
           clientMsg: "This project is inactive.",
@@ -234,7 +232,7 @@ const getProjectDataByName = async (req, res) => {
       isOwner: projectData.owner.toString() === res.user,
       shortDescription: projectData.shortDescription,
       description: projectData.description,
-      finished: format(new Date(projectData.finished), "yyyy.MM.dd"),
+      finished: format(new Date(projectData.finished), "yyyy-MM-dd"),
     };
 
     return res.status(200).json({ project: result, clientMsg: "", error: "" });
