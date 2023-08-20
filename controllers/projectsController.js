@@ -402,6 +402,89 @@ const updateProject = async (req, res) => {
   }
 };
 
+const searchInProjects = async (req, res) => {
+  const { search, onlyName } = req.params;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(req.user) ||
+    typeof search === "undefined" ||
+    typeof onlyName === "undefined"
+  ) {
+    return res.status(400).json({
+      clientMsg: "No information about the project.",
+      error:
+        "No userid/search/onlyName in the request body when trying to search for project.",
+    });
+  }
+
+  try {
+    const { isAdmin } = await User.findOne(
+      { _id: req.user },
+      { isAdmin: 1, _id: 0 }
+    ).exec();
+
+    //if user is not an admin
+    if (!isAdmin) {
+      return res.status(401).json({
+        clientMsg: "You don't have access to this function.",
+        error: "User is not an admin.",
+      });
+    }
+
+    let projects;
+    if (onlyName) {
+      projects = await Project.find({ name: { $regex: `${search}` } })
+        .sort({ name: 1 })
+        .limit(10);
+    } else {
+      projects = await Project.find({
+        $or: [
+          { name: { $regex: search } },
+          { shortDescription: { $regex: search } },
+        ],
+      })
+        .sort({ name: 1 })
+        .limit(10);
+    }
+
+    const result = [];
+
+    // Iterate over each project and fetch memberCount and taskCount
+    for (const project of projects) {
+      // Count the number of other users in the project
+      const memberCount = await ProjectMember.countDocuments({
+        project: project._id,
+      }).exec();
+
+      // Count the number of tasks assigned to the user in the project
+      const taskCount = await Task.countDocuments({
+        project: project._id,
+        assignedTo: req.user,
+      }).exec();
+
+      // Add the project details along with member and task counts to the result
+      result.push({
+        _id: project._id,
+        name: project.name,
+        isOwner: project.owner.toString() === req.user,
+        shortDescription: project.shortDescription,
+        isActive: project.isActive,
+        finished: format(new Date(project.finished), "yyyy-MM-dd"),
+        memberCount: memberCount + 1, //+1 for the owner
+        taskCount: taskCount,
+        recentlyViewed: project.recentlyViewed,
+      });
+    }
+
+    return res.status(200).json({ projects: result, clientMsg: "", error: "" });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getProjectsForUser,
   createProject,
@@ -409,4 +492,5 @@ module.exports = {
   getProjectDataByName,
   getProjectDetailedDataByName,
   updateProject,
+  searchInProjects,
 };

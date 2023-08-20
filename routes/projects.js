@@ -12,5 +12,6 @@ router.get(
   projectsController.getProjectDetailedDataByName
 );
 router.put("/update/:projectname", projectsController.updateProject);
+router.get("/search/:search/:onlyName", projectsController.searchInProjects);
 
 module.exports = router;
