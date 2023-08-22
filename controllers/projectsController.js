@@ -326,6 +326,7 @@ const getProjectDetailedDataByName = async (req, res) => {
       owner: projectData.owner,
       shortDescription: projectData.shortDescription,
       description: projectData.description,
+      isActive: projectData.isActive,
       finished: format(new Date(projectData.finished), "yyyy-MM-dd"),
       createdAt: format(new Date(projectData.createdAt), "yyyy-MM-dd"),
     };
