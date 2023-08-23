@@ -13,5 +13,7 @@ router.get(
 );
 router.put("/update/:projectname", projectsController.updateProject);
 router.get("/search/:search/:onlyName", projectsController.searchInProjects);
+router.get("/owner/:projectname", projectsController.getProjectOwner);
+router.put("/update/owner/:projectname", projectsController.updateOwner);
 
 module.exports = router;

@@ -229,7 +229,7 @@ const getProjectDataByName = async (req, res) => {
     const result = {
       _id: projectData._id,
       name: projectData.name,
-      isOwner: projectData.owner.toString() === res.user,
+      isOwner: projectData.owner.toString() === req.user,
       shortDescription: projectData.shortDescription,
       description: projectData.description,
       finished: format(new Date(projectData.finished), "yyyy-MM-dd"),
@@ -270,26 +270,21 @@ const getProjectDetailedDataByName = async (req, res) => {
 
     //if user is not an admin check if he is the owner or a member
     if (!isAdmin) {
-      const isProjectMember = await ProjectMember.findOne({
-        user: req.user,
-        project: projectId,
-      }).exec();
-      if (!isProjectMember) {
-        return res.status(401).json({
-          clientMsg: "You don't have access to this project.",
-          error: "User is not a member of the project.",
-        });
-      }
-
       const isOwner = await Project.findOne({
         owner: req.user,
         _id: projectId,
       }).exec();
       if (!isOwner) {
-        return res.status(401).json({
-          clientMsg: "You don't have access to this project.",
-          error: "User is not the owner of the project.",
-        });
+        const isProjectMember = await ProjectMember.findOne({
+          user: req.user,
+          project: projectId,
+        }).exec();
+        if (!isProjectMember) {
+          return res.status(401).json({
+            clientMsg: "You don't have access to this project.",
+            error: "User is not a member of the project.",
+          });
+        }
       }
 
       //check if project is inactive
@@ -485,6 +480,164 @@ const searchInProjects = async (req, res) => {
   }
 };
 
+const getProjectOwner = async (req, res) => {
+  const { projectname } = req.params;
+  if (
+    typeof projectname === "undefined" ||
+    !mongoose.Types.ObjectId.isValid(req.user)
+  ) {
+    return res.status(400).json({
+      clientMsg: "No information about the project",
+      error:
+        "No projectname/userid in the request body when trying to get detailed project data by name.",
+    });
+  }
+
+  try {
+    const { isAdmin } = await User.findOne(
+      { _id: req.user },
+      { isAdmin: 1, _id: 0 }
+    ).exec();
+
+    //get the project id for easier searches
+    const { _id: projectId } = await Project.findOne({
+      name: projectname,
+    }).exec();
+
+    //if user is not an admin check if he is the owner or a member
+    if (!isAdmin) {
+      const isOwner = await Project.findOne({
+        owner: req.user,
+        _id: projectId,
+      }).exec();
+
+      if (!isOwner) {
+        //if not an owner check if member
+        const isProjectMember = await ProjectMember.findOne({
+          user: req.user,
+          project: projectId,
+        }).exec();
+
+        if (!isProjectMember) {
+          return res.status(401).json({
+            clientMsg: "You don't have access to this project.",
+            error: "User is not a member of the project.",
+          });
+        }
+      }
+
+      //check if project is inactive
+      const { isActive } = await Project.findOne(
+        {
+          _id: projectId,
+        },
+        {
+          isActive: 1,
+          _id: 0,
+        }
+      ).exec();
+
+      //!check if project is inactive
+      if (!isActive) {
+        return res.status(401).json({
+          clientMsg: "This project is inactive.",
+          error: "The project the user is trying to get is inactive.",
+        });
+      }
+    }
+
+    const projectData = await Project.findOne({
+      _id: projectId,
+    })
+      .populate("owner", "_id username email")
+      .lean()
+      .exec();
+
+    return res
+      .status(200)
+      .json({ owner: projectData.owner, clientMsg: "", error: "" });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
+const updateOwner = async (req, res) => {
+  const { projectname } = req.params;
+  const { newOwner } = req.body;
+  if (
+    typeof projectname === "undefined" ||
+    !mongoose.Types.ObjectId.isValid(req.user) ||
+    !mongoose.Types.ObjectId.isValid(newOwner)
+  ) {
+    return res.status(400).json({
+      clientMsg: "No information about the project",
+      error:
+        "No projectname/userid/newOwner in the request body when trying to update projects owner.",
+    });
+  }
+
+  try {
+    const { isAdmin } = await User.findOne(
+      { _id: req.user },
+      { isAdmin: 1, _id: 0 }
+    ).exec();
+
+    if (!isAdmin) {
+      return res.status(401).json({
+        clientMsg: "You don't have access to update the projects owner.",
+        error: "User is not an admin.",
+      });
+    }
+
+    //get the project id for easier searches
+    const projectData = await Project.findOne({
+      name: projectname,
+    }).exec();
+
+    //check if owner trying to update to himself
+    if (projectData.owner.toString() === newOwner.toString()) {
+      return res.status(401).json({
+        clientMsg: "This user is already the project owner.",
+        error: "Owner trying to add himself as an owner.",
+      });
+    }
+
+    //ADD the old owner as a member
+    await ProjectMember.create({
+      project: projectData._id,
+      user: projectData.owner,
+    });
+
+    //check if new owner is a member, if so remove him from the members
+    const member = await ProjectMember.findOne({
+      project: projectData._id,
+      user: newOwner,
+    });
+
+    if (member) {
+      await ProjectMember.deleteOne({
+        project: projectData._id,
+        user: newOwner,
+      });
+    }
+
+    //update owner
+    await Project.updateOne({ _id: projectData._id }, { owner: newOwner });
+
+    return res
+      .status(201)
+      .json({ clientMsg: "Successfully updated projects owner!", error: "" });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getProjectsForUser,
   createProject,
@@ -493,4 +646,6 @@ module.exports = {
   getProjectDetailedDataByName,
   updateProject,
   searchInProjects,
+  getProjectOwner,
+  updateOwner,
 };
