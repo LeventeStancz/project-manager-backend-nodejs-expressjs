@@ -639,6 +639,119 @@ const updateOwner = async (req, res) => {
   }
 };
 
+const getProjectIsActive = async (req, res) => {
+  const { projectname } = req.params;
+  if (
+    typeof projectname === "undefined" ||
+    !mongoose.Types.ObjectId.isValid(req.user)
+  ) {
+    return res.status(400).json({
+      clientMsg: "No information about the project",
+      error:
+        "No projectname/userid in the request body when trying to get isActive state of the project.",
+    });
+  }
+
+  try {
+    const { isAdmin } = await User.findOne(
+      { _id: req.user },
+      { isAdmin: 1, _id: 0 }
+    ).exec();
+
+    //get the project id for easier searches
+    const { _id: projectId } = await Project.findOne({
+      name: projectname,
+    }).exec();
+
+    //if user is not an admin check if he is the owner or a member
+    if (!isAdmin) {
+      const isOwner = await Project.findOne({
+        owner: req.user,
+        _id: projectId,
+      }).exec();
+
+      if (!isOwner) {
+        //if not an owner check if member
+        const isProjectMember = await ProjectMember.findOne({
+          user: req.user,
+          project: projectId,
+        }).exec();
+
+        if (!isProjectMember) {
+          return res.status(401).json({
+            clientMsg: "You don't have access to this project.",
+            error: "User is not a member of the project.",
+          });
+        }
+      }
+    }
+
+    const { isActive } = await Project.findOne(
+      {
+        _id: projectId,
+      },
+      {
+        isActive: 1,
+        _id: 0,
+      }
+    ).exec();
+
+    return res
+      .status(200)
+      .json({ isActive: isActive, clientMsg: "", error: "" });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
+const updateIsActive = async (req, res) => {
+  const { projectname } = req.params;
+  const { newStatus } = req.body;
+
+  if (
+    typeof projectname === "undefined" ||
+    !mongoose.Types.ObjectId.isValid(req.user) ||
+    typeof newStatus === "undefined"
+  ) {
+    return res.status(400).json({
+      clientMsg: "No information about the project",
+      error:
+        "No projectname/userid/newStatus in the request body when trying to update projects isActive status.",
+    });
+  }
+
+  try {
+    const { isAdmin } = await User.findOne(
+      { _id: req.user },
+      { isAdmin: 1, _id: 0 }
+    ).exec();
+
+    if (!isAdmin) {
+      return res.status(401).json({
+        clientMsg:
+          "You don't have access to update the projects isActive status.",
+        error: "User is not an admin.",
+      });
+    }
+
+    //update owner
+    await Project.updateOne({ name: projectname }, { isActive: newStatus });
+
+    return res.status(201).json({
+      clientMsg: "Successfully updated projects isActive status!",
+      error: "",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getProjectsForUser,
   createProject,
@@ -649,4 +762,6 @@ module.exports = {
   searchInProjects,
   getProjectOwner,
   updateOwner,
+  getProjectIsActive,
+  updateIsActive,
 };
