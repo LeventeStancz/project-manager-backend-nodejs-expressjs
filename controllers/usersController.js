@@ -21,7 +21,7 @@ const searchInUsers = async (req, res) => {
     let users;
     if (onlyUsername) {
       users = await User.find(
-        { username: { $regex: `${search}` } },
+        { username: { $regex: search, $options: "i" } },
         { _id: 1, username: 1 }
       )
         .sort({ username: 1 })
@@ -30,8 +30,8 @@ const searchInUsers = async (req, res) => {
       users = await User.find(
         {
           $or: [
-            { username: { $regex: search } },
-            { email: { $regex: search } },
+            { username: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
           ],
         },
         { _id: 1, username: 1, email: 1 }

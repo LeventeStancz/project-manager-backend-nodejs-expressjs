@@ -429,14 +429,14 @@ const searchInProjects = async (req, res) => {
 
     let projects;
     if (onlyName) {
-      projects = await Project.find({ name: { $regex: `${search}` } })
+      projects = await Project.find({ name: { $regex: search, $options: "i" } })
         .sort({ name: 1 })
         .limit(10);
     } else {
       projects = await Project.find({
         $or: [
-          { name: { $regex: search } },
-          { shortDescription: { $regex: search } },
+          { name: { $regex: search, $options: "i" } },
+          { shortDescription: { $regex: search, $options: "i" } },
         ],
       })
         .sort({ name: 1 })
