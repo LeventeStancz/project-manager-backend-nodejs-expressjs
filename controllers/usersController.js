@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { format } = require("date-fns");
 
 const User = require("../models/User");
 
@@ -59,7 +60,15 @@ const getUserData = async (req, res) => {
 
   try {
     const user = await User.findOne({ _id: req.user }).lean().exec();
-    return res.status(200).json({ user, clientMsg: "", error: "" });
+
+    return res.status(200).json({
+      user: {
+        ...user,
+        createdAt: format(new Date(user.createdAt), "yyyy-MM-dd"),
+      },
+      clientMsg: "",
+      error: "",
+    });
   } catch (error) {
     return res.status(500).json({
       clientMsg: "Something went wrong. Try again later!",
