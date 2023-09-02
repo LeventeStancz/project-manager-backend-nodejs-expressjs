@@ -77,7 +77,35 @@ const getUserData = async (req, res) => {
   }
 };
 
+const updateUsername = async (req, res) => {
+  const { username } = req.body;
+  if (
+    typeof username === "undefined" ||
+    !mongoose.Types.ObjectId.isValid(req.user)
+  ) {
+    return res.status(400).json({
+      clientMsg: "No information about the user.",
+      error:
+        "No username/userid in the request body when trying update users username.",
+    });
+  }
+
+  try {
+    User.findOneAndUpdate({ _id: req.user }, { username: username }).exec();
+
+    return res
+      .status(200)
+      .json({ clientMsg: "Successfully updated username!", error: "" });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   searchInUsers,
   getUserData,
+  updateUsername,
 };
