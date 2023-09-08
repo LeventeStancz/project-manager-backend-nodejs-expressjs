@@ -197,10 +197,20 @@ const getTasksInProject = async (req, res) => {
       }
     }
 
-    const result = await Task.find({
-      project: projectId,
-      assignedTo: req.user,
-    });
+    let result = [];
+
+    if (isAdmin) {
+      result = await Task.find({
+        project: projectId,
+        assignedTo: req.user,
+      });
+    } else {
+      result = await Task.find({
+        project: projectId,
+        assignedTo: req.user,
+        isActive: true,
+      });
+    }
 
     const tasks = result.map((task) => {
       return {
