@@ -134,11 +134,40 @@ const getRecentProjectName = async (req, res) => {
   }
 
   try {
-    const project = await Project.findOne({}, { _id: -1, name: 1 })
+    //get owner projects
+    const ownedProjects = await Project.find({ owner: req.user }).exec();
+    //get project where member
+    let projectsWhereMember = await ProjectMember.find(
+      { user: req.user },
+      { project: 1, _id: 0 }
+    )
+      .populate("project")
+      .exec();
+
+    //format object
+    projectsWhereMember = projectsWhereMember.map((project) => {
+      return { ...project.project._doc };
+    });
+
+    const projects = [...ownedProjects, ...projectsWhereMember];
+
+    //get the most recent project
+    const project = projects.sort(
+      (a, b) => b.recentlyViewed - a.recentlyViewed
+    )[0];
+
+    /*const project = await Project.findOne({}, { _id: -1, name: 1 })
       .sort({ recentlyViewed: -1 })
       .limit(1)
       .lean()
-      .exec();
+      .exec();*/
+
+    if (!project) {
+      return res.status(404).json({
+        clientMsg: "You don't have a recently viewed project!",
+        error: "User doesn't have a recently viewed project.",
+      });
+    }
 
     return res
       .status(200)
