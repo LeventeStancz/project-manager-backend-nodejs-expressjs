@@ -1,4 +1,4 @@
 //remove/add some at build
-const allowedOrigins = ["https://project-manager-nuxi.onrender.com:3000"];
+const allowedOrigins = ["https://project-manager-nuxi.onrender.com"];
 
 module.exports = allowedOrigins;
