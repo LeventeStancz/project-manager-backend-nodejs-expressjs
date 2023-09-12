@@ -1,8 +1,9 @@
 const allowedOrigins = require("./allowedOrigins");
+const { logEvents } = require("../middlewares/logEvents");
 
 const corsOptions = {
   origin: (origin, callback) => {
-    console.log(origin);
+    logEvents(`${origin}`, "requestLog.txt");
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
       //error: null, sameOrigin: true
       callback(null, true);
