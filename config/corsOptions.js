@@ -2,8 +2,7 @@ const allowedOrigins = require("./allowedOrigins");
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (origin) console.log(origin);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
       //error: null, sameOrigin: true
       callback(null, true);
     } else {
