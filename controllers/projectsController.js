@@ -781,6 +781,37 @@ const updateIsActive = async (req, res) => {
   }
 };
 
+const isProjectOwner = async (req, res) => {
+  const { projectid } = req.params;
+  if (
+    !mongoose.Types.ObjectId.isValid(projectid) ||
+    !mongoose.Types.ObjectId.isValid(req.user)
+  ) {
+    return res.status(400).json({
+      clientMsg: "No information about the project",
+      error:
+        "No projectid/userid in the request body when trying to check if user is the owner.",
+    });
+  }
+
+  try {
+    const project = await Project.findOne({
+      _id: projectid,
+    }).exec();
+
+    return res.status(200).json({
+      isOwner: project.owner.toString() === req.user.toString(),
+      clientMsg: "",
+      error: "",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      clientMsg: "Something went wrong. Try again later!",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getProjectsForUser,
   createProject,
@@ -793,4 +824,5 @@ module.exports = {
   updateOwner,
   getProjectIsActive,
   updateIsActive,
+  isProjectOwner,
 };
